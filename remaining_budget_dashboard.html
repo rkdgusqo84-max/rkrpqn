@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111111" />
+  <title>남은 금액</title>
+  <style>
+    :root {
+      --bg: #f4f4f2;
+      --card: #ffffff;
+      --text: #151515;
+      --muted: #777;
+      --line: #e6e6e2;
+      --danger: #c73b3b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+        "Noto Sans KR", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .wrap {
+      width: min(720px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 34px 0 80px;
+    }
+
+    .hero {
+      background: var(--card);
+      border-radius: 28px;
+      padding: 34px 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.06);
+      text-align: center;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    .remaining {
+      font-size: clamp(42px, 10vw, 76px);
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      line-height: 1.05;
+      word-break: keep-all;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .summary-box {
+      background: #f8f8f6;
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .summary-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .summary-box strong {
+      font-size: 20px;
+    }
+
+    .panel {
+      margin-top: 18px;
+      background: var(--card);
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.05);
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 20px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 15px 14px;
+      font-size: 16px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #aaa;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 15px 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #151515;
+      color: #fff;
+    }
+
+    .secondary {
+      background: #ecece8;
+      color: #222;
+    }
+
+    .danger {
+      background: transparent;
+      color: var(--danger);
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .row > * { flex: 1; }
+
+    .expense-list {
+      margin-top: 8px;
+    }
+
+    .expense-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 12px;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .expense-item:last-child {
+      border-bottom: 0;
+    }
+
+    .expense-name {
+      font-weight: 600;
+    }
+
+    .expense-date {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .expense-amount {
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .empty {
+      color: var(--muted);
+      text-align: center;
+      padding: 24px 0 10px;
+    }
+
+    .footer-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 520px) {
+      .wrap { padding-top: 18px; }
+      .hero { padding: 28px 18px; border-radius: 22px; }
+      .panel { padding: 18px; border-radius: 20px; }
+      .summary { grid-template-columns: 1fr; }
+      .row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div class="label">남은 금액</div>
+      <div id="remaining" class="remaining">0원</div>
+
+      <div class="summary">
+        <div class="summary-box">
+          <span>설정 금액</span>
+          <strong id="budgetDisplay">0원</strong>
+        </div>
+        <div class="summary-box">
+          <span>지출 합계</span>
+          <strong id="spentDisplay">0원</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>기준 금액 설정</h2>
+      <div class="row">
+        <input id="budgetInput" type="number" inputmode="numeric" min="0"
+               placeholder="예: 2000000" />
+        <button id="saveBudget" class="secondary">금액 저장</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>지출 추가</h2>
+      <div class="form-grid">
+        <input id="expenseName" type="text" placeholder="항목명 예: 식비" />
+        <input id="expenseAmount" type="number" inputmode="numeric" min="0"
+               placeholder="금액 예: 15000" />
+        <button id="addExpense" class="primary">지출 추가</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>지출 내역</h2>
+      <div id="expenseList" class="expense-list"></div>
+      <div class="footer-actions">
+        <button id="resetAll" class="danger">전체 초기화</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "simple-budget-dashboard-v1";
+
+    let state = loadState();
+
+    const el = {
+      remaining: document.getElementById("remaining"),
+      budgetDisplay: document.getElementById("budgetDisplay"),
+      spentDisplay: document.getElementById("spentDisplay"),
+      budgetInput: document.getElementById("budgetInput"),
+      saveBudget: document.getElementById("saveBudget"),
+      expenseName: document.getElementById("expenseName"),
+      expenseAmount: document.getElementById("expenseAmount"),
+      addExpense: document.getElementById("addExpense"),
+      expenseList: document.getElementById("expenseList"),
+      resetAll: document.getElementById("resetAll")
+    };
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (saved && typeof saved.budget === "number" && Array.isArray(saved.expenses)) {
+          return saved;
+        }
+      } catch (_) {}
+      return { budget: 0, expenses: [] };
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function formatWon(value) {
+      const sign = value < 0 ? "-" : "";
+      return sign + Math.abs(value).toLocaleString("ko-KR") + "원";
+    }
+
+    function totalSpent() {
+      return state.expenses.reduce((sum, item) => sum + item.amount, 0);
+    }
+
+    function render() {
+      const spent = totalSpent();
+      const remaining = state.budget - spent;
+
+      el.remaining.textContent = formatWon(remaining);
+      el.budgetDisplay.textContent = formatWon(state.budget);
+      el.spentDisplay.textContent = formatWon(spent);
+      el.budgetInput.value = state.budget || "";
+
+      if (state.expenses.length === 0) {
+        el.expenseList.innerHTML = '<div class="empty">아직 지출 내역이 없습니다.</div>';
+        return;
+      }
+
+      el.expenseList.innerHTML = state.expenses
+        .slice()
+        .reverse()
+        .map(item => `
+          <div class="expense-item">
+            <div>
+              <div class="expense-name">${escapeHtml(item.name)}</div>
+              <div class="expense-date">${item.date}</div>
+            </div>
+            <div class="expense-amount">${formatWon(item.amount)}</div>
+            <button class="danger" data-id="${item.id}">삭제</button>
+          </div>
+        `)
+        .join("");
+
+      el.expenseList.querySelectorAll("[data-id]").forEach(button => {
+        button.addEventListener("click", () => {
+          const id = Number(button.dataset.id);
+          state.expenses = state.expenses.filter(item => item.id !== id);
+          saveState();
+          render();
+        });
+      });
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    el.saveBudget.addEventListener("click", () => {
+      const value = Number(el.budgetInput.value);
+      if (!Number.isFinite(value) || value < 0) {
+        alert("기준 금액을 올바르게 입력해 주세요.");
+        return;
+      }
+      state.budget = value;
+      saveState();
+      render();
+    });
+
+    el.addExpense.addEventListener("click", () => {
+      const name = el.expenseName.value.trim() || "지출";
+      const amount = Number(el.expenseAmount.value);
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        alert("지출 금액을 올바르게 입력해 주세요.");
+        return;
+      }
+
+      state.expenses.push({
+        id: Date.now(),
+        name,
+        amount,
+        date: new Date().toLocaleDateString("ko-KR")
+      });
+
+      el.expenseName.value = "";
+      el.expenseAmount.value = "";
+      saveState();
+      render();
+      el.expenseName.focus();
+    });
+
+    el.expenseAmount.addEventListener("keydown", event => {
+      if (event.key === "Enter") el.addExpense.click();
+    });
+
+    el.resetAll.addEventListener("click", () => {
+      if (!confirm("설정 금액과 모든 지출 내역을 초기화할까요?")) return;
+      state = { budget: 0, expenses: [] };
+      saveState();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
