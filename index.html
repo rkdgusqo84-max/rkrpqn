@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5f7fc" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>가계부</title>
+  <style>
+    :root{
+      --bg:#f5f7fc;
+      --card:#fff;
+      --text:#090a0d;
+      --sub:#8c8d94;
+      --line:#eceef3;
+      --blue:#087cf0;
+      --blue-deep:#075ad1;
+      --green:#30d158;
+      --orange:#ff9500;
+      --red:#ff3b30;
+      --shadow:0 16px 38px rgba(31,48,86,.09);
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:var(--bg)}
+    body{
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    button,input{font:inherit}
+    button{cursor:pointer}
+    .app{
+      width:min(100%,760px);
+      margin:0 auto;
+      padding:calc(24px + env(safe-area-inset-top)) 22px calc(46px + env(safe-area-inset-bottom));
+    }
+
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin:10px 4px 12px;
+    }
+    h1{margin:0;font-size:36px;letter-spacing:-1.7px}
+    .settings{
+      width:58px;height:58px;border:0;border-radius:50%;
+      background:#fff;color:var(--blue);
+      display:grid;place-items:center;
+      font-size:27px;
+      box-shadow:var(--shadow);
+    }
+
+    .today{
+      display:flex;align-items:center;gap:8px;
+      margin:0 7px 20px;
+      color:var(--blue);
+      font-size:18px;font-weight:760;
+    }
+
+    .summary{
+      position:relative;overflow:hidden;
+      border-radius:40px;
+      padding:34px 30px 27px;
+      color:#fff;
+      background:linear-gradient(145deg,var(--blue) 0%,#0878ed 45%,var(--blue-deep) 100%);
+      box-shadow:0 20px 42px rgba(0,107,227,.24);
+    }
+    .summary:after{
+      content:"";
+      position:absolute;
+      width:300px;height:300px;border-radius:50%;
+      right:-80px;top:-100px;
+      background:rgba(255,255,255,.12);
+    }
+
+    .summary-top{
+      position:relative;z-index:1;
+      display:grid;grid-template-columns:1fr auto;gap:18px;align-items:end;
+    }
+    .label{font-size:18px;color:rgba(255,255,255,.76)}
+    .remaining{
+      margin-top:10px;
+      font-size:54px;font-weight:820;letter-spacing:-3px;white-space:nowrap;
+    }
+    .d-box{text-align:center;padding-bottom:7px}
+    .d-day{
+      display:inline-block;
+      padding:7px 13px;
+      border-radius:12px;
+      background:rgba(255,255,255,.9);
+      color:#176bd5;
+      font-weight:820;
+      font-size:21px;
+    }
+    .d-caption{margin-top:7px;font-size:14px;color:rgba(255,255,255,.86)}
+
+    .summary-divider{
+      position:relative;z-index:1;
+      height:1px;background:rgba(255,255,255,.25);
+      margin:26px 0 18px;
+    }
+    .summary-bottom{
+      position:relative;z-index:1;
+      display:grid;grid-template-columns:1fr 1fr;
+    }
+    .stat{padding:0 4px}
+    .stat + .stat{border-left:1px solid rgba(255,255,255,.22);padding-left:28px}
+    .stat-title{font-size:15px;color:rgba(255,255,255,.72)}
+    .stat-value{font-size:24px;font-weight:760;margin-top:6px}
+
+    .entry-card{
+      margin-top:34px;
+      background:#fff;
+      border-radius:34px;
+      padding:26px 28px 28px;
+      box-shadow:var(--shadow);
+    }
+    .entry-card h2,.recent-head h2{
+      margin:0;
+      font-size:22px;
+      letter-spacing:-.7px;
+    }
+    .fields{margin-top:16px}
+    .field{
+      display:grid;
+      grid-template-columns:44px 72px 1fr;
+      gap:12px;
+      align-items:center;
+      min-height:84px;
+    }
+    .field + .field{border-top:1px solid var(--line)}
+    .icon{
+      width:40px;height:40px;border-radius:12px;
+      display:grid;place-items:center;color:#fff;font-size:21px;font-weight:780;
+    }
+    .icon.green{background:var(--green)}
+    .icon.orange{background:var(--orange)}
+    .icon.blue{background:var(--blue)}
+    .field-name{font-size:17px;font-weight:700}
+    .field input{
+      width:100%;
+      border:0;outline:0;
+      background:#f7f8fb;
+      border-radius:15px;
+      padding:15px 16px;
+      font-size:17px;
+      color:var(--text);
+    }
+    .field input::placeholder{color:#b4b5bb}
+    .add{
+      width:100%;
+      border:0;
+      margin-top:18px;
+      padding:18px;
+      border-radius:22px;
+      background:var(--blue);
+      color:#fff;
+      font-size:20px;
+      font-weight:800;
+      box-shadow:0 10px 24px rgba(0,122,255,.22);
+    }
+
+    .recent{margin-top:34px}
+    .recent-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin:0 4px 14px;
+    }
+    .recent-count{font-size:15px;color:var(--sub)}
+    .list{display:grid;gap:12px}
+    .expense{
+      display:grid;
+      grid-template-columns:50px 1fr auto 42px;
+      gap:13px;
+      align-items:center;
+      background:#fff;
+      padding:18px 18px 18px 20px;
+      border-radius:28px;
+      box-shadow:var(--shadow);
+    }
+    .receipt{
+      width:50px;height:50px;border-radius:15px;
+      display:grid;place-items:center;
+      background:#f1f2f5;
+      font-size:23px;
+    }
+    .expense-title{font-size:18px;font-weight:780}
+    .expense-date{font-size:14px;color:var(--sub);margin-top:5px}
+    .expense-amount{font-size:19px;font-weight:800;white-space:nowrap}
+    .delete{
+      width:42px;height:42px;border:0;border-radius:50%;
+      background:#f0f1f4;color:#9a9ba2;font-size:25px;
+    }
+    .empty{
+      padding:28px 20px;
+      text-align:center;color:var(--sub);
+      background:#fff;border-radius:26px;
+      box-shadow:var(--shadow);
+    }
+
+    .tabbar{
+      position:sticky;
+      bottom:calc(10px + env(safe-area-inset-bottom));
+      z-index:20;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:28px;
+      padding:7px;
+      border:1px solid rgba(0,0,0,.04);
+      border-radius:22px;
+      background:rgba(255,255,255,.88);
+      backdrop-filter:blur(18px);
+      box-shadow:var(--shadow);
+    }
+    .tabbtn{
+      border:0;
+      border-radius:16px;
+      padding:13px 10px;
+      background:transparent;
+      color:var(--sub);
+      font-weight:760;
+    }
+    .tabbtn.active{background:var(--blue);color:#fff}
+    .page{display:none}
+    .page.active{display:block}
+    .manage-card{
+      margin-top:24px;
+      background:#fff;
+      border-radius:30px;
+      padding:24px;
+      box-shadow:var(--shadow);
+    }
+    .manage-card h2{margin:0 0 8px;font-size:24px}
+    .manage-desc{margin:0 0 18px;color:var(--sub);font-size:14px;line-height:1.55}
+    .item-add-row{display:grid;grid-template-columns:1fr auto;gap:10px}
+    .item-add-row input{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:15px 16px;
+      outline:0;
+      font-size:17px;
+    }
+    .item-add-row button{
+      border:0;border-radius:16px;padding:0 18px;
+      background:var(--blue);color:#fff;font-weight:760;
+    }
+    .saved-items{display:grid;gap:10px;margin-top:18px}
+    .saved-item{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:14px 15px;
+      border-radius:17px;
+      background:#f7f8fb;
+    }
+    .saved-item-name{font-weight:720}
+    .saved-item button{
+      width:34px;height:34px;border:0;border-radius:50%;
+      background:#eceef3;color:#8b8c93;font-size:20px;
+    }
+    .reset{
+      display:block;
+      width:100%;
+      border:0;
+      margin-top:28px;
+      padding:17px;
+      border-radius:22px;
+      color:var(--red);
+      background:#fff3f2;
+      font-size:16px;font-weight:700;
+    }
+
+    dialog{
+      width:min(92%,430px);
+      border:0;border-radius:28px;padding:0;
+      box-shadow:0 30px 80px rgba(0,0,0,.24);
+    }
+    dialog::backdrop{background:rgba(0,0,0,.34);backdrop-filter:blur(3px)}
+    .modal{padding:24px}
+    .modal h3{margin:0 0 17px;font-size:23px}
+    .modal input{
+      width:100%;border:1px solid var(--line);border-radius:16px;
+      padding:15px 16px;font-size:18px;outline:0;
+    }
+    .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+    .actions button{border:0;border-radius:14px;padding:12px 16px;font-weight:750}
+    .cancel{background:#f0f1f4;color:#555}
+    .save{background:var(--blue);color:#fff}
+
+    @media(max-width:560px){
+      .app{padding-left:16px;padding-right:16px}
+      h1{font-size:32px}
+      .summary{padding:30px 24px 24px;border-radius:34px}
+      .remaining{font-size:45px}
+      .summary-top{grid-template-columns:1fr auto}
+      .summary-bottom{grid-template-columns:1fr 1fr}
+      .stat + .stat{padding-left:18px}
+      .entry-card{padding:24px 20px}
+      .field{grid-template-columns:40px 58px 1fr;gap:9px}
+      .expense{grid-template-columns:46px 1fr auto}
+      .delete{grid-column:3;grid-row:1 / span 2}
+      .expense-amount{grid-column:2;justify-self:end}
+    }
+
+    @media(max-width:390px){
+      .remaining{font-size:40px}
+      .d-day{font-size:18px}
+      .field{grid-template-columns:38px 50px 1fr}
+      .field-name{font-size:15px}
+    }
+  
+    .header-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .auth-btn{
+      height:58px;
+      border:0;
+      border-radius:20px;
+      padding:0 18px;
+      background:#fff;
+      color:var(--blue);
+      font-weight:780;
+      font-size:15px;
+      box-shadow:var(--shadow);
+      white-space:nowrap;
+    }
+    .auth-btn.logged-in{
+      color:#555;
+      background:#fff;
+    }
+    .auth-status{
+      margin:12px 6px 0;
+      font-size:13px;
+      color:var(--sub);
+      text-align:right;
+      min-height:18px;
+    }
+    .auth-modal .auth-fields{
+      display:grid;
+      gap:12px;
+    }
+    .auth-modal input{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:15px 16px;
+      font-size:17px;
+      outline:0;
+      background:#f7f8fb;
+    }
+    .auth-message{
+      min-height:20px;
+      margin:10px 2px 0;
+      font-size:13px;
+      color:var(--red);
+      line-height:1.45;
+    }
+    .auth-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:16px;
+    }
+    .auth-actions button{
+      border:0;
+      border-radius:15px;
+      padding:14px 12px;
+      font-weight:760;
+    }
+    .auth-login{background:var(--blue);color:#fff}
+    .auth-signup{background:#eef5ff;color:var(--blue)}
+    .auth-close{
+      width:100%;
+      margin-top:10px;
+      border:0;
+      border-radius:15px;
+      padding:13px;
+      background:#f0f1f4;
+      color:#555;
+      font-weight:740;
+    }
+
+    @media(max-width:560px){
+      .header-actions{gap:8px}
+      .auth-btn{height:50px;padding:0 14px;border-radius:17px;font-size:14px}
+      .settings{width:50px;height:50px}
+    }
+
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section id="homePage" class="page active">
+    <header class="header">
+      <h1>가계부</h1>
+      <div class="header-actions">
+        <button id="authBtn" class="auth-btn" type="button">로그인</button>
+        <button id="settingsBtn" class="settings" aria-label="설정">⚙︎</button>
+      </div>
+    </header>
+
+    <div id="todayText" class="today">📅 오늘 날짜</div>
+    <div id="authStatus" class="auth-status">로그인하지 않음</div>
+
+    <section class="summary">
+      <div class="summary-top">
+        <div>
+          <div class="label">남은 금액</div>
+          <div id="remainingAmount" class="remaining">0원</div>
+        </div>
+        <div class="d-box">
+          <div id="dDayText" class="d-day">D-0</div>
+          <div class="d-caption">이번 달 남은 날짜</div>
+        </div>
+      </div>
+
+      <div class="summary-divider"></div>
+
+      <div class="summary-bottom">
+        <div class="stat">
+          <div class="stat-title">지출 합계</div>
+          <div id="spentAmount" class="stat-value">0원</div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">하루 사용 가능 금액</div>
+          <div id="dailyAmount" class="stat-value">0원</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="entry-card">
+      <h2>지출 추가</h2>
+      <div class="fields">
+        <label class="field">
+          <span class="icon green">₩</span>
+          <span class="field-name">금액</span>
+          <input id="amountInput" inputmode="numeric" placeholder="0원" />
+        </label>
+
+        <label class="field">
+          <span class="icon orange">✎</span>
+          <span class="field-name">품목</span>
+          <input id="itemInput" list="savedItemOptions" autocomplete="off" placeholder="예) 맥날, 커피, 교통비" />
+          <datalist id="savedItemOptions"></datalist>
+        </label>
+
+        <label class="field">
+          <span class="icon blue">▣</span>
+          <span class="field-name">날짜</span>
+          <input id="dateInput" type="date" />
+        </label>
+      </div>
+
+      <button id="addBtn" class="add">지출 추가</button>
+    </section>
+
+    <section class="recent">
+      <div class="recent-head">
+        <h2>최근 지출</h2>
+        <span id="recentCount" class="recent-count">0건</span>
+      </div>
+      <div id="expenseList" class="list"></div>
+    </section>
+
+    <button id="resetBtn" class="reset">모든 데이터 초기화</button>
+    </section>
+
+    <section id="itemsPage" class="page">
+      <header class="header">
+        <h1>품목 관리</h1>
+      </header>
+
+      <section class="manage-card">
+        <h2>자동완성 품목</h2>
+        <p class="manage-desc">자주 쓰는 품목을 등록하면 지출 입력창에서 자동완성으로 선택할 수 있습니다. 새 지출에 입력한 품목도 자동으로 저장됩니다.</p>
+
+        <div class="item-add-row">
+          <input id="newSavedItemInput" placeholder="추가할 품목">
+          <button id="addSavedItemBtn" type="button">추가</button>
+        </div>
+
+        <div id="savedItemsList" class="saved-items"></div>
+      </section>
+    </section>
+
+    <nav class="tabbar" aria-label="화면 전환">
+      <button class="tabbtn active" data-page="homePage" type="button">가계부</button>
+      <button class="tabbtn" data-page="itemsPage" type="button">품목 관리</button>
+    </nav>
+  </main>
+
+
+  <dialog id="authDialog">
+    <div class="modal auth-modal">
+      <h3>계정</h3>
+      <div class="auth-fields">
+        <input id="authEmail" type="email" autocomplete="email" placeholder="이메일" />
+        <input id="authPassword" type="password" autocomplete="current-password" placeholder="비밀번호 6자 이상" />
+      </div>
+      <div id="authMessage" class="auth-message"></div>
+      <div class="auth-actions">
+        <button id="loginAction" class="auth-login" type="button">로그인</button>
+        <button id="signupAction" class="auth-signup" type="button">회원가입</button>
+      </div>
+      <button id="closeAuthDialog" class="auth-close" type="button">닫기</button>
+    </div>
+  </dialog>
+
+  <dialog id="settingsDialog">
+    <div class="modal">
+      <h3>기준 금액 설정</h3>
+      <input id="budgetInput" inputmode="numeric" placeholder="이번 달 사용할 금액" />
+      <div class="actions">
+        <button id="cancelSettings" class="cancel">취소</button>
+        <button id="saveSettings" class="save">저장</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = "soloBudgetAppV6";
+      const state = load();
+      if(!Array.isArray(state.savedItems)) state.savedItems=["맥날","커피","교통비"];
+
+      const amountInput = document.getElementById("amountInput");
+      const itemInput = document.getElementById("itemInput");
+      const dateInput = document.getElementById("dateInput");
+
+      function load(){
+        try{
+          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+            budget:500000,
+            expenses:[],
+            savedItems:["맥날","커피","교통비"]
+          };
+        }catch{
+          return {budget:500000,expenses:[],savedItems:["맥날","커피","교통비"]};
+        }
+      }
+
+      function save(){
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+        render();
+      }
+
+      function localDateString(date = new Date()){
+        const y=date.getFullYear();
+        const m=String(date.getMonth()+1).padStart(2,"0");
+        const d=String(date.getDate()).padStart(2,"0");
+        return `${y}-${m}-${d}`;
+      }
+
+      function formatWon(value){
+        return `${Math.max(0,Number(value||0)).toLocaleString("ko-KR")}원`;
+      }
+
+      function formatDate(value){
+        const date=new Date(`${value}T12:00:00`);
+        const week=["일","월","화","수","목","금","토"];
+        return `${date.getMonth()+1}월 ${date.getDate()}일 (${week[date.getDay()]})`;
+      }
+
+      function currentMonthExpenses(){
+        const ym=localDateString().slice(0,7);
+        return state.expenses.filter(item=>item.date.startsWith(ym));
+      }
+
+      function remainingDays(){
+        renderSavedItems();
+        const now=new Date();
+        const last=new Date(now.getFullYear(),now.getMonth()+1,0);
+        return Math.max(0,last.getDate()-now.getDate());
+      }
+
+      function dailyDivisor(){
+        return remainingDays()+1;
+      }
+
+      function addExpense(){
+        const amount=Number(amountInput.value.replace(/[^0-9]/g,""));
+        const item=itemInput.value.trim();
+
+        if(!amount){
+          alert("금액을 입력해주세요.");
+          amountInput.focus();
+          return;
+        }
+        if(!item){
+          alert("품목을 입력해주세요.");
+          itemInput.focus();
+          return;
+        }
+
+        state.expenses.unshift({
+          id:`${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+          amount,
+          item,
+          date:dateInput.value || localDateString(),
+          createdAt:new Date().toISOString()
+        });
+
+        if(!state.savedItems.some(saved => saved.toLowerCase() === item.toLowerCase())){
+          state.savedItems.unshift(item);
+        }
+
+        amountInput.value="";
+        itemInput.value="";
+        dateInput.value=localDateString();
+        save();
+        amountInput.focus();
+      }
+
+      function deleteExpense(id){
+        const index=state.expenses.findIndex(item=>item.id===id);
+        if(index<0)return;
+        state.expenses.splice(index,1);
+        save();
+      }
+
+      function escapeHtml(value){
+        return String(value ?? "").replace(/[&<>"']/g,char=>({
+          "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+        }[char]));
+      }
+
+      function addSavedItem(){
+        const input=document.getElementById("newSavedItemInput");
+        const value=input.value.trim();
+        if(!value){
+          input.focus();
+          return;
+        }
+        if(!state.savedItems.some(item=>item.toLowerCase()===value.toLowerCase())){
+          state.savedItems.unshift(value);
+        }
+        input.value="";
+        save();
+        input.focus();
+      }
+
+      function deleteSavedItem(value){
+        state.savedItems=state.savedItems.filter(item=>item!==value);
+        save();
+      }
+
+      function renderSavedItems(){
+        const options=document.getElementById("savedItemOptions");
+        options.innerHTML=state.savedItems.map(item=>`<option value="${escapeHtml(item)}"></option>`).join("");
+
+        const list=document.getElementById("savedItemsList");
+        if(!state.savedItems.length){
+          list.innerHTML='<div class="empty">등록된 품목이 없습니다.</div>';
+          return;
+        }
+
+        list.innerHTML=state.savedItems.map(item=>`
+          <div class="saved-item">
+            <span class="saved-item-name">${escapeHtml(item)}</span>
+            <button type="button" data-saved-item="${encodeURIComponent(item)}" aria-label="삭제">×</button>
+          </div>
+        `).join("");
+
+        list.querySelectorAll("[data-saved-item]").forEach(button=>{
+          button.addEventListener("click",()=>deleteSavedItem(decodeURIComponent(button.dataset.savedItem)));
+        });
+      }
+
+      function render(){
+        const now=new Date();
+        const week=["일","월","화","수","목","금","토"];
+        const expenses=currentMonthExpenses();
+        const spent=expenses.reduce((sum,item)=>sum+Number(item.amount||0),0);
+        const remaining=Math.max(0,Number(state.budget||0)-spent);
+        const d=remainingDays();
+        const daily=Math.floor(remaining/Math.max(1,dailyDivisor()));
+
+        document.getElementById("todayText").textContent=
+          `📅 ${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${week[now.getDay()]})`;
+        document.getElementById("dDayText").textContent=`D-${d}`;
+        document.getElementById("remainingAmount").textContent=formatWon(remaining);
+        document.getElementById("spentAmount").textContent=formatWon(spent);
+        document.getElementById("dailyAmount").textContent=formatWon(daily);
+        document.getElementById("recentCount").textContent=`${expenses.length}건`;
+
+        const list=document.getElementById("expenseList");
+        if(!expenses.length){
+          list.innerHTML='<div class="empty">아직 지출 내역이 없습니다.</div>';
+          return;
+        }
+
+        list.innerHTML=expenses.map(item=>`
+          <article class="expense">
+            <div class="receipt">🧾</div>
+            <div>
+              <div class="expense-title">${escapeHtml(item.item)}</div>
+              <div class="expense-date">${formatDate(item.date)}</div>
+            </div>
+            <div class="expense-amount">-${formatWon(item.amount)}</div>
+            <button class="delete" data-id="${item.id}" aria-label="삭제">×</button>
+          </article>
+        `).join("");
+
+        list.querySelectorAll(".delete").forEach(button=>{
+          button.addEventListener("click",()=>deleteExpense(button.dataset.id));
+        });
+      }
+
+      document.getElementById("addBtn").addEventListener("click",addExpense);
+      amountInput.addEventListener("keydown",e=>{if(e.key==="Enter")itemInput.focus()});
+      itemInput.addEventListener("keydown",e=>{if(e.key==="Enter")addExpense()});
+
+      const dialog=document.getElementById("settingsDialog");
+      const budgetInput=document.getElementById("budgetInput");
+
+      document.getElementById("settingsBtn").addEventListener("click",()=>{
+        budgetInput.value=state.budget||"";
+        dialog.showModal();
+      });
+
+      document.getElementById("cancelSettings").addEventListener("click",()=>dialog.close());
+
+      document.getElementById("saveSettings").addEventListener("click",()=>{
+        const value=Number(budgetInput.value.replace(/[^0-9]/g,""));
+        if(!value){
+          alert("기준 금액을 입력해주세요.");
+          return;
+        }
+        state.budget=value;
+        dialog.close();
+        save();
+      });
+
+      document.getElementById("resetBtn").addEventListener("click",()=>{
+        if(confirm("모든 지출 기록과 기준 금액을 초기화할까요?")){
+          state.budget=500000;
+          state.expenses=[];
+          state.savedItems=["맥날","커피","교통비"];
+          save();
+        }
+      });
+
+      document.getElementById("addSavedItemBtn").addEventListener("click",addSavedItem);
+      document.getElementById("newSavedItemInput").addEventListener("keydown",e=>{
+        if(e.key==="Enter") addSavedItem();
+      });
+
+      document.querySelectorAll(".tabbtn").forEach(button=>{
+        button.addEventListener("click",()=>{
+          document.querySelectorAll(".page").forEach(page=>page.classList.toggle("active",page.id===button.dataset.page));
+          document.querySelectorAll(".tabbtn").forEach(tab=>tab.classList.toggle("active",tab===button));
+          window.scrollTo({top:0,behavior:"smooth"});
+        });
+      });
+
+      dateInput.value=localDateString();
+      render();
+    })();
+  </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import {
+      getAuth,
+      setPersistence,
+      browserLocalPersistence,
+      onAuthStateChanged,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBxOsjRUdFtv2DsVOv9ZhB8CdZlWdDqQ7A",
+      authDomain: "budget-2fddd.firebaseapp.com",
+      projectId: "budget-2fddd",
+      storageBucket: "budget-2fddd.firebasestorage.app",
+      messagingSenderId: "850401998666",
+      appId: "1:850401998666:web:e42e842b6c96d4a6d7f3b3",
+      measurementId: "G-K4W3BK10CQ"
+    };
+
+    const authBtn = document.getElementById("authBtn");
+    const authStatus = document.getElementById("authStatus");
+    const authDialog = document.getElementById("authDialog");
+    const emailInput = document.getElementById("authEmail");
+    const passwordInput = document.getElementById("authPassword");
+    const authMessage = document.getElementById("authMessage");
+    const loginAction = document.getElementById("loginAction");
+    const signupAction = document.getElementById("signupAction");
+    const closeAuthDialog = document.getElementById("closeAuthDialog");
+
+    let auth;
+    let currentUser = null;
+
+    function friendlyError(error){
+      const code = error?.code || "";
+      const map = {
+        "auth/invalid-email":"이메일 형식이 올바르지 않습니다.",
+        "auth/missing-password":"비밀번호를 입력해주세요.",
+        "auth/weak-password":"비밀번호는 6자 이상이어야 합니다.",
+        "auth/email-already-in-use":"이미 가입된 이메일입니다.",
+        "auth/invalid-credential":"이메일 또는 비밀번호가 맞지 않습니다.",
+        "auth/operation-not-allowed":"Firebase에서 이메일/비밀번호 로그인을 활성화해야 합니다.",
+        "auth/unauthorized-domain":"Firebase 승인 도메인에 현재 사이트 주소를 추가해야 합니다.",
+        "auth/network-request-failed":"네트워크 연결을 확인해주세요.",
+        "auth/too-many-requests":"요청이 너무 많습니다. 잠시 후 다시 시도해주세요."
+      };
+      return map[code] || `로그인 오류: ${code || error?.message || "알 수 없는 오류"}`;
+    }
+
+    function openAuth(){
+      authMessage.textContent = "";
+      passwordInput.value = "";
+      authDialog.showModal();
+      setTimeout(()=>emailInput.focus(),100);
+    }
+
+    function updateUI(user){
+      currentUser = user;
+      if(user){
+        authBtn.textContent = "로그아웃";
+        authBtn.classList.add("logged-in");
+        authStatus.textContent = user.email || "로그인됨";
+      }else{
+        authBtn.textContent = "로그인";
+        authBtn.classList.remove("logged-in");
+        authStatus.textContent = "로그인하지 않음";
+      }
+    }
+
+    try{
+      const app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      await setPersistence(auth, browserLocalPersistence);
+      onAuthStateChanged(auth, updateUI);
+    }catch(error){
+      authStatus.textContent = "Firebase 연결 실패";
+      authMessage.textContent = friendlyError(error);
+      console.error(error);
+    }
+
+    authBtn.addEventListener("click", async ()=>{
+      if(currentUser){
+        try{
+          await signOut(auth);
+        }catch(error){
+          alert(friendlyError(error));
+        }
+      }else{
+        openAuth();
+      }
+    });
+
+    loginAction.addEventListener("click", async ()=>{
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      authMessage.textContent = "";
+      if(!email || !password){
+        authMessage.textContent = "이메일과 비밀번호를 모두 입력해주세요.";
+        return;
+      }
+      try{
+        await signInWithEmailAndPassword(auth,email,password);
+        authDialog.close();
+      }catch(error){
+        authMessage.textContent = friendlyError(error);
+      }
+    });
+
+    signupAction.addEventListener("click", async ()=>{
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      authMessage.textContent = "";
+      if(!email || !password){
+        authMessage.textContent = "이메일과 비밀번호를 모두 입력해주세요.";
+        return;
+      }
+      try{
+        await createUserWithEmailAndPassword(auth,email,password);
+        authDialog.close();
+      }catch(error){
+        authMessage.textContent = friendlyError(error);
+      }
+    });
+
+    closeAuthDialog.addEventListener("click",()=>authDialog.close());
+    passwordInput.addEventListener("keydown",e=>{
+      if(e.key === "Enter") loginAction.click();
+    });
+  </script>
+
+</body>
+</html>
