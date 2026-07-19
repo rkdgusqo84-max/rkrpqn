@@ -335,183 +335,28 @@
       </div>
     </div>
   </dialog>
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  <script>
-    (() => {
-      const STORAGE_KEY = "soloBudgetAppV6";
-      const state = load();
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyBxOsjRUdFtv2DsVOv9ZhB8CdZlWdDqQ7A",
+    authDomain: "budget-2fddd.firebaseapp.com",
+    projectId: "budget-2fddd",
+    storageBucket: "budget-2fddd.firebasestorage.app",
+    messagingSenderId: "850401998666",
+    appId: "1:850401998666:web:e42e842b6c96d4a6d7f3b3",
+    measurementId: "G-K4W3BK10CQ"
+  };
 
-      const amountInput = document.getElementById("amountInput");
-      const itemInput = document.getElementById("itemInput");
-      const dateInput = document.getElementById("dateInput");
-
-      function load(){
-        try{
-          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
-            budget:500000,
-            expenses:[]
-          };
-        }catch{
-          return {budget:500000,expenses:[]};
-        }
-      }
-
-      function save(){
-        localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
-        render();
-      }
-
-      function localDateString(date = new Date()){
-        const y=date.getFullYear();
-        const m=String(date.getMonth()+1).padStart(2,"0");
-        const d=String(date.getDate()).padStart(2,"0");
-        return `${y}-${m}-${d}`;
-      }
-
-      function formatWon(value){
-        return `${Math.max(0,Number(value||0)).toLocaleString("ko-KR")}원`;
-      }
-
-      function formatDate(value){
-        const date=new Date(`${value}T12:00:00`);
-        const week=["일","월","화","수","목","금","토"];
-        return `${date.getMonth()+1}월 ${date.getDate()}일 (${week[date.getDay()]})`;
-      }
-
-      function currentMonthExpenses(){
-        const ym=localDateString().slice(0,7);
-        return state.expenses.filter(item=>item.date.startsWith(ym));
-      }
-
-      function remainingDays(){
-        const now=new Date();
-        const last=new Date(now.getFullYear(),now.getMonth()+1,0);
-        return Math.max(0,last.getDate()-now.getDate());
-      }
-
-      function dailyDivisor(){
-        return remainingDays()+1;
-      }
-
-      function addExpense(){
-        const amount=Number(amountInput.value.replace(/[^0-9]/g,""));
-        const item=itemInput.value.trim();
-
-        if(!amount){
-          alert("금액을 입력해주세요.");
-          amountInput.focus();
-          return;
-        }
-        if(!item){
-          alert("품목을 입력해주세요.");
-          itemInput.focus();
-          return;
-        }
-
-        state.expenses.unshift({
-          id:`${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
-          amount,
-          item,
-          date:dateInput.value || localDateString(),
-          createdAt:new Date().toISOString()
-        });
-
-        amountInput.value="";
-        itemInput.value="";
-        dateInput.value=localDateString();
-        save();
-        amountInput.focus();
-      }
-
-      function deleteExpense(id){
-        const index=state.expenses.findIndex(item=>item.id===id);
-        if(index<0)return;
-        state.expenses.splice(index,1);
-        save();
-      }
-
-      function escapeHtml(value){
-        return String(value ?? "").replace(/[&<>"']/g,char=>({
-          "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-        }[char]));
-      }
-
-      function render(){
-        const now=new Date();
-        const week=["일","월","화","수","목","금","토"];
-        const expenses=currentMonthExpenses();
-        const spent=expenses.reduce((sum,item)=>sum+Number(item.amount||0),0);
-        const remaining=Math.max(0,Number(state.budget||0)-spent);
-        const d=remainingDays();
-        const daily=Math.floor(remaining/Math.max(1,dailyDivisor()));
-
-        document.getElementById("todayText").textContent=
-          `📅 ${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${week[now.getDay()]})`;
-        document.getElementById("dDayText").textContent=`D-${d}`;
-        document.getElementById("remainingAmount").textContent=formatWon(remaining);
-        document.getElementById("spentAmount").textContent=formatWon(spent);
-        document.getElementById("dailyAmount").textContent=formatWon(daily);
-        document.getElementById("recentCount").textContent=`${expenses.length}건`;
-
-        const list=document.getElementById("expenseList");
-        if(!expenses.length){
-          list.innerHTML='<div class="empty">아직 지출 내역이 없습니다.</div>';
-          return;
-        }
-
-        list.innerHTML=expenses.map(item=>`
-          <article class="expense">
-            <div class="receipt">🧾</div>
-            <div>
-              <div class="expense-title">${escapeHtml(item.item)}</div>
-              <div class="expense-date">${formatDate(item.date)}</div>
-            </div>
-            <div class="expense-amount">-${formatWon(item.amount)}</div>
-            <button class="delete" data-id="${item.id}" aria-label="삭제">×</button>
-          </article>
-        `).join("");
-
-        list.querySelectorAll(".delete").forEach(button=>{
-          button.addEventListener("click",()=>deleteExpense(button.dataset.id));
-        });
-      }
-
-      document.getElementById("addBtn").addEventListener("click",addExpense);
-      amountInput.addEventListener("keydown",e=>{if(e.key==="Enter")itemInput.focus()});
-      itemInput.addEventListener("keydown",e=>{if(e.key==="Enter")addExpense()});
-
-      const dialog=document.getElementById("settingsDialog");
-      const budgetInput=document.getElementById("budgetInput");
-
-      document.getElementById("settingsBtn").addEventListener("click",()=>{
-        budgetInput.value=state.budget||"";
-        dialog.showModal();
-      });
-
-      document.getElementById("cancelSettings").addEventListener("click",()=>dialog.close());
-
-      document.getElementById("saveSettings").addEventListener("click",()=>{
-        const value=Number(budgetInput.value.replace(/[^0-9]/g,""));
-        if(!value){
-          alert("기준 금액을 입력해주세요.");
-          return;
-        }
-        state.budget=value;
-        dialog.close();
-        save();
-      });
-
-      document.getElementById("resetBtn").addEventListener("click",()=>{
-        if(confirm("모든 지출 기록과 기준 금액을 초기화할까요?")){
-          state.budget=500000;
-          state.expenses=[];
-          save();
-        }
-      });
-
-      dateInput.value=localDateString();
-      render();
-    })();
-  </script>
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
 </body>
 </html>
